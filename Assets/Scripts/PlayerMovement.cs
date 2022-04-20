@@ -12,11 +12,13 @@ public class PlayerMovement : MonoBehaviour
     public KeyCode right = KeyCode.D;
     public KeyCode jump = KeyCode.Space;
 
-    //movement speeds
+    //movement speeds & timers
     public float lookSpeed = 3.0f;
     public float forwardSpeed = 5.0f;
     public float strafeSpeed = 5.0f;
     public float jumpForce = 500.0f;
+
+    int timer = 0;
 
     //camera variables
     private Camera playerCamera;
@@ -31,6 +33,16 @@ public class PlayerMovement : MonoBehaviour
     //physics variables
     private Rigidbody playerRB;
 
+    //default hand positions
+    private Vector3 leftHandDefPos = new Vector3(-0.268f,0.324f,0.9f);
+    private Vector3 rightHandDefPos = new Vector3(0.355f,0.324f,0.9f);
+
+    private GameObject rightHand;
+    private GameObject leftHand;
+
+    //animations
+    Animator m_Animator;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -43,6 +55,9 @@ public class PlayerMovement : MonoBehaviour
         rotY = rot.y;
         rotX = rot.x;
 
+        //Get the animator and attach to Player
+        m_Animator = gameObject.GetComponent<Animator>();
+
     }
 
     // Update is called once per frame
@@ -54,21 +69,42 @@ public class PlayerMovement : MonoBehaviour
         if(Input.GetKey(forward)){
             //move forward
             transform.Translate(Vector3.forward * forwardSpeed * Time.deltaTime);
+            m_Animator.SetBool("running", true);
         }
 
         if(Input.GetKey(back)){
             //move forward
             transform.Translate(Vector3.forward * -forwardSpeed * Time.deltaTime);
+            m_Animator.SetBool("running", true);
         }
 
         if(Input.GetKey(right)){
             //move forward
             transform.Translate(Vector3.right * forwardSpeed * Time.deltaTime);
+            m_Animator.SetBool("running", true);
         }
 
         if(Input.GetKey(left)){
             //move forward
             transform.Translate(Vector3.right * -forwardSpeed * Time.deltaTime);
+            m_Animator.SetBool("running", true);
+        }
+
+        //check to see if the player is no longer moving and stop animation
+        if(!Input.GetKey(forward) 
+            && !Input.GetKey(back) 
+            && !Input.GetKey(right) 
+            && !Input.GetKey(left))
+        {
+            
+            if(timer < 60){
+                timer++;
+            }else{
+                m_Animator.SetBool("running", false);
+                timer = 0;
+            }
+
+
         }
 
         #endregion
@@ -103,7 +139,5 @@ public class PlayerMovement : MonoBehaviour
         }
 
         #endregion
-
-
     }
-}
+    }
