@@ -18,8 +18,6 @@ public class PlayerMovement : MonoBehaviour
     public float strafeSpeed = 5.0f;
     public float jumpForce = 500.0f;
 
-    int timer = 0;
-
     //camera variables
     private Camera playerCamera;
 
@@ -34,14 +32,23 @@ public class PlayerMovement : MonoBehaviour
     private Rigidbody playerRB;
 
     //default hand positions
-    private Vector3 leftHandDefPos = new Vector3(-0.268f,0.324f,0.9f);
-    private Vector3 rightHandDefPos = new Vector3(0.355f,0.324f,0.9f);
+    private Vector3 leftHandDefPos = new Vector3(-0.268f, 0.324f, 0.9f);
+    private Vector3 rightHandDefPos = new Vector3(0.355f, 0.324f, 0.9f);
 
     private GameObject rightHand;
     private GameObject leftHand;
 
+    //any other scripts we need
+    [SerializeField] private GameManager gameManager;
+
     //animations
     Animator m_Animator;
+    string defRunAnim = "running";
+    string weapRunAnim = "runWeapon";
+    string curAnimation;
+    bool crRunning;
+    bool areWeMoving;
+    bool wereWeMoving;
 
     // Start is called before the first frame update
     void Start()
@@ -57,7 +64,8 @@ public class PlayerMovement : MonoBehaviour
 
         //Get the animator and attach to Player
         m_Animator = gameObject.GetComponent<Animator>();
-
+        crRunning = false;
+        wereWeMoving = false;
     }
 
     // Update is called once per frame
@@ -66,46 +74,57 @@ public class PlayerMovement : MonoBehaviour
 
         #region Basic Movement
 
-        if(Input.GetKey(forward)){
+        if (Input.GetKey(forward))
+        {
             //move forward
             transform.Translate(Vector3.forward * forwardSpeed * Time.deltaTime);
-            m_Animator.SetBool("running", true);
+            if (!areWeMoving)
+            {
+                areWeMoving = true;
+            }
         }
 
-        if(Input.GetKey(back)){
+        if (Input.GetKey(back))
+        {
             //move forward
             transform.Translate(Vector3.forward * -forwardSpeed * Time.deltaTime);
-            m_Animator.SetBool("running", true);
+            if (!areWeMoving)
+            {
+                areWeMoving = true;
+            }
         }
 
-        if(Input.GetKey(right)){
+        if (Input.GetKey(right))
+        {
             //move forward
             transform.Translate(Vector3.right * forwardSpeed * Time.deltaTime);
-            m_Animator.SetBool("running", true);
+            if (!areWeMoving)
+            {
+                areWeMoving = true;
+            }
         }
 
-        if(Input.GetKey(left)){
+        if (Input.GetKey(left))
+        {
             //move forward
             transform.Translate(Vector3.right * -forwardSpeed * Time.deltaTime);
-            m_Animator.SetBool("running", true);
+            if (!areWeMoving)
+            {
+                areWeMoving = true;
+            }
         }
 
         //check to see if the player is no longer moving and stop animation
-        if(!Input.GetKey(forward) 
-            && !Input.GetKey(back) 
-            && !Input.GetKey(right) 
+        if (!Input.GetKey(forward)
+            && !Input.GetKey(back)
+            && !Input.GetKey(right)
             && !Input.GetKey(left))
         {
-            
-            if(timer < 60){
-                timer++;
-            }else{
-                m_Animator.SetBool("running", false);
-                timer = 0;
-            }
-
-
+                areWeMoving = false;
         }
+
+        CheckAnimating();
+        //Debug.Log(areWeMoving);
 
         #endregion
         #region Mouselook
@@ -119,8 +138,8 @@ public class PlayerMovement : MonoBehaviour
         rotX = rotation.y * lookSpeed;
 
         // making sure we can't break our neck looking up
-        rotX = Mathf.Clamp(rotX, minCamAngleX, maxCamAngleX); 
-        
+        rotX = Mathf.Clamp(rotX, minCamAngleX, maxCamAngleX);
+
         //set angles as quaternions for rotation (better than using Euler angles)
         Quaternion playerRotation = Quaternion.Euler(0.0f, rotY, 0.0f);
         Quaternion cameraRotation = Quaternion.Euler(rotX, rotY, 0.0f);
@@ -132,7 +151,8 @@ public class PlayerMovement : MonoBehaviour
         #endregion
 
         #region Jump
-        if(Input.GetKeyDown(jump)){
+        if (Input.GetKeyDown(jump))
+        {
             //apply upward force
             playerRB.AddForce(transform.up * jumpForce);
 
@@ -140,4 +160,110 @@ public class PlayerMovement : MonoBehaviour
 
         #endregion
     }
+    #region Animating
+    private void CheckAnimating()
+    {
+
+        //grab the current animation if it's playing
+        string animName = CheckRunningAnimation();
+
+
+        if (areWeMoving)
+        {
+            //if we weren't moving before, we are listed as moving now
+            if(!wereWeMoving){
+                wereWeMoving = true;
+            }
+            //if we are moving, is the coRoutine running?
+            if (crRunning)
+            {
+                //stop the timer for the animation
+                StopCoroutine("StopAnimating");
+                crRunning = false;
+            }
+
+            //check to see if an animation is playing currently since we are moving
+            if (animName != "null")
+            { //there is an animation playing
+                //did we pick up a weapon?
+                if (gameManager.hasShooter && animName != weapRunAnim)
+                {
+                    //stop the running animation, sending animation name and breakout function to stop immediately
+                    StopAnimating(animName, true);
+                    m_Animator.SetBool(weapRunAnim, true);
+                }
+                else if (gameManager.hasShooter && animName == weapRunAnim)
+                {
+                    //do nothing
+                }
+                else if (animName == defRunAnim && !gameManager.hasShooter)
+                {
+                    //do nothing
+                }
+            }
+            else
+            { // no animation is playing
+                //do we have a weapon?
+                if (gameManager.hasShooter)
+                {
+                    //set the variable to be the weapon animation
+                    animName = weapRunAnim;
+                }
+                else
+                {
+                    //set the variable to be the default running animation
+                    animName = defRunAnim;
+                }
+
+                //start animation
+                m_Animator.SetBool(animName, true);
+            }
+            // if there have been no changes to the state of the animation we let it play
+        }
+        else
+        { //if we stop moving start the co-routine & say that we aren't moving
+            if(wereWeMoving){
+            StartCoroutine (StopAnimating(animName, false));
+            wereWeMoving = false;
+            }
+            //if we already weren't moving, do nothing
+        }
     }
+
+    IEnumerator StopAnimating(string curAnim, bool breakOut)
+    {
+        string stopAnim = curAnim;
+        crRunning = true;
+        //if we've not been asked to break the coroutine
+        if (!breakOut)
+        {
+            for (float timer = 0; timer < 60; timer++)
+            {
+                Debug.Log(timer);
+                yield return new WaitForEndOfFrame();
+            }
+            breakOut = true;
+            Debug.Log("I broke out");
+        }
+        m_Animator.SetBool(stopAnim, false);
+        crRunning = false;
+    }
+
+    string CheckRunningAnimation()
+    {
+        //are any of our known animation booleens true?
+        if (m_Animator.GetBool(defRunAnim))
+        {
+            return defRunAnim;
+        }
+        else if (m_Animator.GetBool(weapRunAnim))
+        {
+            return weapRunAnim;
+        }
+
+        //if they are not, return nothing
+        return "null";
+    }
+
+    #endregion
+}
