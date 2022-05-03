@@ -31,10 +31,6 @@ public class PlayerMovement : MonoBehaviour
     //physics variables
     private Rigidbody playerRB;
 
-    //default hand positions
-    private Vector3 leftHandDefPos = new Vector3(-0.268f, 0.324f, 0.9f);
-    private Vector3 rightHandDefPos = new Vector3(0.355f, 0.324f, 0.9f);
-
     private GameObject rightHand;
     private GameObject leftHand;
 
@@ -45,6 +41,7 @@ public class PlayerMovement : MonoBehaviour
     Animator m_Animator;
     string defRunAnim = "running";
     string weapRunAnim = "runWeapon";
+    string animHasWeap = "hasWeapon";
     string curAnimation;
     bool crRunning;
     bool areWeMoving;
@@ -188,9 +185,13 @@ public class PlayerMovement : MonoBehaviour
                 //did we pick up a weapon?
                 if (gameManager.hasShooter && animName != weapRunAnim)
                 {
+                    Debug.Log(animName);
                     //stop the running animation, sending animation name and breakout function to stop immediately
-                    StopAnimating(animName, true);
-                    m_Animator.SetBool(weapRunAnim, true);
+                    StartCoroutine (StopAnimating(animName, true));
+
+                    //start the weapon animation and set hasWeapon to true
+                   m_Animator.SetBool(weapRunAnim, true);
+                   m_Animator.SetBool(animHasWeap, true);
                 }
                 else if (gameManager.hasShooter && animName == weapRunAnim)
                 {
@@ -208,11 +209,13 @@ public class PlayerMovement : MonoBehaviour
                 {
                     //set the variable to be the weapon animation
                     animName = weapRunAnim;
+                    m_Animator.SetBool(animHasWeap, true);
                 }
                 else
                 {
                     //set the variable to be the default running animation
                     animName = defRunAnim;
+                    m_Animator.SetBool(animHasWeap, false);
                 }
 
                 //start animation
@@ -239,11 +242,11 @@ public class PlayerMovement : MonoBehaviour
         {
             for (float timer = 0; timer < 60; timer++)
             {
-                Debug.Log(timer);
+               // Debug.Log(timer);
                 yield return new WaitForEndOfFrame();
             }
             breakOut = true;
-            Debug.Log("I broke out");
+           // Debug.Log("I broke out");
         }
         m_Animator.SetBool(stopAnim, false);
         crRunning = false;

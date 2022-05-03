@@ -7,6 +7,9 @@ TagManager:
   - shooter
   - powerup
   - player
+  - shooterPU
+  - RightHand
+  - LeftHand
   layers:
   - Default
   - TransparentFX

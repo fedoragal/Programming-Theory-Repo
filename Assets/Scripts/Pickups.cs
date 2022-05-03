@@ -18,8 +18,8 @@ public class Pickups : MonoBehaviour
     [SerializeField] public GameObject shooter;
 
     //variables to store defaults
-    private Vector3 shooterOffset = new Vector3(-0.245f, 0.32f, 0.981f);
-    private Quaternion shooterRotation = Quaternion.Euler(24.302f, -60.383f, 5.516f);
+    private Vector3 shooterOffset = new Vector3(.003f, 0.113f, 0.022f);
+    private Quaternion shooterRotation = Quaternion.Euler(7.153f, -79.569f, 0.854f);
 
     private void Start() {
         //grab the gamemanager script
@@ -44,6 +44,17 @@ public class Pickups : MonoBehaviour
 
     private void PickupShooter(GameObject pickup){
         //grab left hand and right hand gameobjects
+        foreach(Transform child in otherObj.GetComponentInChildren<Transform>()){
+            if(child.CompareTag("RightHand")){
+                rightHand = child.gameObject;
+                child.transform.position = gameManager.rightHandDefPos;
+                child.transform.rotation = gameManager.defHandRotation;
+            } else if(child.CompareTag("LeftHand")){
+                leftHand = child.gameObject;
+                child.transform.position = gameManager.leftHandDefPos;
+                child.transform.rotation = gameManager.defHandRotation;
+            }
+        }
 
         //check to see if the player already has a shooter
         if(gameManager.hasShooter){
@@ -54,13 +65,13 @@ public class Pickups : MonoBehaviour
         }
 
         //spawn the new shooter
-            Vector3 shooterLocation = otherObj.transform.position;
+            Vector3 shooterLocation = rightHand.transform.position;
             spawned = Instantiate(shooter, shooterLocation, shooterRotation);
-            spawned.transform.parent = otherObj.transform;
+            spawned.transform.parent = rightHand.transform;
             spawned.transform.position += shooterOffset;
 
         //destroy the pickup object on the ground
-            Destroy(thisObj.gameObject);
+            Destroy(gameObject);
     }
 
     private void PickupPowerUp(GameObject pickup){
