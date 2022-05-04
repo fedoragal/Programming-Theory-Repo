@@ -152,12 +152,13 @@ public class PlayerMovement : MonoBehaviour
         {
             //apply upward force
             playerRB.AddForce(transform.up * jumpForce);
+            //Debug.Log("I tried to jump with " + jumpForce +" force");
 
         }
 
         #endregion
     }
-    #region Animating
+    #region Animating Running
     private void CheckAnimating()
     {
 
